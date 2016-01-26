@@ -10,6 +10,15 @@ struct Lens<Whole, Part> {
     let set: (Part, Whole) -> Whole
 }
 
+func compose<A, B, C>(lhs: Lens<A, B>, rhs: Lens<B, C>) -> Lens<A, C> {
+    return Lens<A, C>(
+        get: { rhs.get(lhs.get($0)) },
+        set: { (c, a) -> A in
+            lhs.set(rhs.set(c, lhs.get(a)), a)
+        }
+    )
+}
+
 /// UserViewModel is a value type that contains the static data prepared for consumption by the view layer.
 /// The avatarImageData field represents an external image resource in various states (empty, loading, loaded, errored).
 /// As a value-type, in order to change states, a completely new UserViewModel must be created.
