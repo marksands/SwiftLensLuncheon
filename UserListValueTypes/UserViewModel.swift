@@ -5,6 +5,11 @@
 
 import Foundation
 
+struct Lens<Whole, Part> {
+    let get: Whole -> Part
+    let set: (Part, Whole) -> Whole
+}
+
 /// UserViewModel is a value type that contains the static data prepared for consumption by the view layer.
 /// The avatarImageData field represents an external image resource in various states (empty, loading, loaded, errored).
 /// As a value-type, in order to change states, a completely new UserViewModel must be created.
@@ -32,25 +37,39 @@ struct UserViewModel {
     func shouldFetchAvatarImage() -> Bool {
         return avatarImageData.shouldFetch()
     }
-    
-    /// TODO: These mutators would probably be better as lenses.
-    func withData(data: NSData) -> UserViewModel {
-        let resource = self.avatarImageData.withOutput(.Loaded(data))
-        let loadedUserViewModel = UserViewModel(user: self.user, avatarImageData: resource)
-        return loadedUserViewModel
-    }
-    
-    func withError(error: NSError) -> UserViewModel {
-        let resource = self.avatarImageData.withOutput(.Error(error))
-        let errorUserViewModel = UserViewModel(user: self.user, avatarImageData: resource)
-        return errorUserViewModel
-    }
-    
-    func withLoading(progress: Float) -> UserViewModel {
-        let resource = self.avatarImageData.withOutput(.Loading(progress))
-        let loadingUserViewModel = UserViewModel(user: self.user, avatarImageData: resource)
-        return loadingUserViewModel
-    }
+
+    let imageLoadingLens = Lens<UserViewModel, Float>(
+        get: {
+            guard case .Loading(let progress) = $0.avatarImageData.output else { fatalError() }
+            return progress
+        },
+        set: { (progress, userViewModel) in
+            let resource = userViewModel.avatarImageData.withOutput(.Loading(progress))
+            return UserViewModel(user: userViewModel.user, avatarImageData: resource)
+        }
+    )
+
+    let imageDataLens = Lens<UserViewModel, NSData>(
+        get: {
+            guard case .Loaded(let data) = $0.avatarImageData.output else { fatalError() }
+            return data
+        },
+        set: { (data, userViewModel) in
+            let resource = userViewModel.avatarImageData.withOutput(.Loaded(data))
+            return UserViewModel(user: userViewModel.user, avatarImageData: resource)
+        }
+    )
+
+    let imageErrorLens = Lens<UserViewModel, ErrorType>(
+        get: {
+            guard case .Error(let error) = $0.avatarImageData.output else { fatalError() }
+            return error
+        },
+        set: { (error, userViewModel) in
+            let resource = userViewModel.avatarImageData.withOutput(.Error(error))
+            return UserViewModel(user: userViewModel.user, avatarImageData: resource)
+        }
+    )
 }
 
 /// We consider UserViewModels to be of equal identity if their underlying User models are the equal.

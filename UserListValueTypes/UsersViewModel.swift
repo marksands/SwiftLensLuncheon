@@ -126,14 +126,15 @@ class UsersViewModel {
     private func fetchUserViewModelImageProducer(userViewModel: UserViewModel) -> SignalProducer<UserViewModel, NoError> {
         return SignalProducer(value: userViewModel.avatarImageData.input) /// Lift the URL into a Signal.
             .flatMap(.Latest, transform: imageController.loadImageDataProducer) /// Fetch the image.
-            .map(userViewModel.withData) /// Create a new userViewModel with the image data.
-            .flatMapError { SignalProducer(value: userViewModel.withError($0)) } /// Or if it failed, catch the error and create a new userViewModel with the error.
+            //.map(userViewModel.withData) /// Create a new userViewModel with the image data.
+            .map { data in userViewModel.imageDataLens.set(data, userViewModel) }
+            .flatMapError { SignalProducer(value: userViewModel.imageErrorLens.set($0, userViewModel)) } /// Or if it failed, catch the error and create a new userViewModel with the error.
     }
     
     /// Send a new userViewModel in the loading state.
     private func loadingImageUserViewModelImageProducer(userViewModel: UserViewModel) -> SignalProducer<UserViewModel, NoError> {
         return SignalProducer(value: userViewModel)
-            .map { $0.withLoading(0) }
+            .map { $0.imageLoadingLens.set(0, $0) }
     }
     
     /// Given a list of userViewModels and a userViewModel, replace those view models in userViewModels that have "equal identity" to userViewModel.
