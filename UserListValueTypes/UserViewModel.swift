@@ -19,6 +19,24 @@ func compose<A, B, C>(lhs: Lens<A, B>, rhs: Lens<B, C>) -> Lens<A, C> {
     )
 }
 
+func * <A, B, C>(lhs: Lens<A, B>, rhs: Lens<B, C>) -> Lens<A, C> {
+    return compose(lhs, rhs: rhs)
+}
+
+infix operator *~ { associativity left precedence 100 }
+func *~ <A, B>(lhs: Lens<A, B>, rhs: B) -> A -> A {
+    return { a in lhs.set(rhs, a) }
+}
+
+infix operator |> { associativity left precedence 80 }
+func |> <A, B>(x: A, f: A -> B) -> B {
+    return f(x)
+}
+
+func |> <A, B, C>(f: A -> B, g: B -> C) -> A -> C {
+    return { g(f($0)) }
+}
+
 /// UserViewModel is a value type that contains the static data prepared for consumption by the view layer.
 /// The avatarImageData field represents an external image resource in various states (empty, loading, loaded, errored).
 /// As a value-type, in order to change states, a completely new UserViewModel must be created.
@@ -46,8 +64,16 @@ struct UserViewModel {
     func shouldFetchAvatarImage() -> Bool {
         return avatarImageData.shouldFetch()
     }
+}
 
-    let imageLoadingLens = Lens<UserViewModel, Float>(
+/// We consider UserViewModels to be of equal identity if their underlying User models are the equal.
+extension UserViewModel: Identifiable {}
+func =~=(lhs: UserViewModel, rhs: UserViewModel) -> Bool {
+    return lhs.user == rhs.user
+}
+
+extension UserViewModel {
+    static let imageLoadingLens = Lens<UserViewModel, Float>(
         get: {
             guard case .Loading(let progress) = $0.avatarImageData.output else { fatalError() }
             return progress
@@ -58,7 +84,7 @@ struct UserViewModel {
         }
     )
 
-    let imageDataLens = Lens<UserViewModel, NSData>(
+    static let imageDataLens = Lens<UserViewModel, NSData>(
         get: {
             guard case .Loaded(let data) = $0.avatarImageData.output else { fatalError() }
             return data
@@ -69,7 +95,7 @@ struct UserViewModel {
         }
     )
 
-    let imageErrorLens = Lens<UserViewModel, ErrorType>(
+    static let imageErrorLens = Lens<UserViewModel, ErrorType>(
         get: {
             guard case .Error(let error) = $0.avatarImageData.output else { fatalError() }
             return error
@@ -79,10 +105,4 @@ struct UserViewModel {
             return UserViewModel(user: userViewModel.user, avatarImageData: resource)
         }
     )
-}
-
-/// We consider UserViewModels to be of equal identity if their underlying User models are the equal.
-extension UserViewModel: Identifiable {}
-func =~=(lhs: UserViewModel, rhs: UserViewModel) -> Bool {
-    return lhs.user == rhs.user
 }
