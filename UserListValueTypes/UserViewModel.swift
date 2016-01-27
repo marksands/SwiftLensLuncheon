@@ -50,21 +50,17 @@ extension UserViewModel {
 }
 
 extension AsyncResource where InputType: NSURL, OutputType: NSData {
-    static func inputLens() -> Lens<AsyncResource<NSURL, NSData>, NSURL> {
-        return Lens<AsyncResource<NSURL, NSData>, NSURL>(
-            get: { $0.input },
-            set: { (inputType, resource) in
-                AsyncResource<NSURL, NSData>(input: inputType, output: resource.output)
-            }
-        )
-    }
-
-    static func outputLens() -> Lens<AsyncResource<NSURL, NSData>, AsyncResourceState<NSData>> {
-        return Lens<AsyncResource<NSURL, NSData>, AsyncResourceState<NSData>>(
-            get: { $0.output },
-            set: { (resourceOutputState, resource) in
-                AsyncResource<NSURL, NSData>(input: resource.input, output: resourceOutputState)
-            }
-        )
-    }
+    static let inputLens = Lens<AsyncResource<NSURL, NSData>, NSURL>(
+		get: { $0.input },
+		set: { (inputType, resource) in
+			AsyncResource<NSURL, NSData>(input: inputType, output: resource.output)
+		}
+	)
+	
+    static let outputLens = Lens<AsyncResource<NSURL, NSData>, AsyncResourceState<NSData>>(
+		get: { $0.output },
+		set: { (resourceOutputState, resource) in
+			AsyncResource<NSURL, NSData>(input: resource.input, output: resourceOutputState)
+		}
+	)
 }
