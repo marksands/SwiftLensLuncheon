@@ -126,16 +126,16 @@ class UsersViewModel {
     private func fetchUserViewModelImageProducer(userViewModel: UserViewModel) -> SignalProducer<UserViewModel, NoError> {
         return SignalProducer(value: userViewModel.avatarImageData.input) /// Lift the URL into a Signal.
             .flatMap(.Latest, transform: imageController.loadImageDataProducer) /// Fetch the image.
-            .map { data in UserViewModel.imageDataLens.set(data, userViewModel) }
-            .flatMapError { SignalProducer(value: UserViewModel.imageErrorLens.set($0, userViewModel)) } /// Or if it failed, catch the error and create a new userViewModel with the error.
+			.map { userViewModel |> UserViewModel.asyncResourceLens * AsyncResource.outputLens() *~ .Loaded($0) }
+			.flatMapError { SignalProducer(value: userViewModel |> UserViewModel.asyncResourceLens * AsyncResource.outputLens() *~ .Error($0)) }
     }
     
     /// Send a new userViewModel in the loading state.
     private func loadingImageUserViewModelImageProducer(userViewModel: UserViewModel) -> SignalProducer<UserViewModel, NoError> {
         return SignalProducer(value: userViewModel)
-            .map { UserViewModel.imageLoadingLens.set(0, $0) }
+			.map { userViewModel in userViewModel |> UserViewModel.asyncResourceLens * AsyncResource.outputLens() *~ .Loading(0) }
     }
-    
+		
     /// Given a list of userViewModels and a userViewModel, replace those view models in userViewModels that have "equal identity" to userViewModel.
     /// Equal identity is defined by the Identifiable protocol and custom =~= operator.
     /// Equal identity means that the underlying User objects are the equal, but the state of the derived view model attributes (the state of the image loading) are different.
@@ -167,5 +167,4 @@ class UsersViewModel {
                 return (userViewModel, newUserViewModels, changedIndexPaths)
         }
     }
-
 }

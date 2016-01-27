@@ -41,39 +41,6 @@ func =~=(lhs: UserViewModel, rhs: UserViewModel) -> Bool {
 }
 
 extension UserViewModel {
-    static let imageLoadingLens = Lens<UserViewModel, Float>(
-        get: {
-            guard case .Loading(let progress) = $0.avatarImageData.output else { fatalError() }
-            return progress
-        },
-        set: { (progress, userViewModel) in
-            let resource = userViewModel.avatarImageData.withOutput(.Loading(progress))
-            return UserViewModel(user: userViewModel.user, avatarImageData: resource)
-        }
-    )
-
-    static let imageDataLens = Lens<UserViewModel, NSData>(
-        get: {
-            guard case .Loaded(let data) = $0.avatarImageData.output else { fatalError() }
-            return data
-        },
-        set: { (data, userViewModel) in
-            let resource = userViewModel.avatarImageData.withOutput(.Loaded(data))
-            return UserViewModel(user: userViewModel.user, avatarImageData: resource)
-        }
-    )
-
-    static let imageErrorLens = Lens<UserViewModel, ErrorType>(
-        get: {
-            guard case .Error(let error) = $0.avatarImageData.output else { fatalError() }
-            return error
-        },
-        set: { (error, userViewModel) in
-            let resource = userViewModel.avatarImageData.withOutput(.Error(error))
-            return UserViewModel(user: userViewModel.user, avatarImageData: resource)
-        }
-    )
-
     static let asyncResourceLens = Lens<UserViewModel, AsyncResource<NSURL, NSData>>(
         get: { $0.avatarImageData },
         set: { (asyncResource, userViewModel) -> UserViewModel in

@@ -9,11 +9,6 @@ struct AsyncResource<InputType, OutputType> {
     let input: InputType
     let output: AsyncResourceState<OutputType>
     
-    /// Manual lens.
-    func withOutput(output: AsyncResourceState<OutputType>) -> AsyncResource {
-        return AsyncResource(input: input, output: output)
-    }
-    
     /// These should probably be defined somewhere else, but we'll consider this a sane default.
     func shouldFetch() -> Bool {
         switch output {
